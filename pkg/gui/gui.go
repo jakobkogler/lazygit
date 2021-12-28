@@ -346,6 +346,9 @@ type guiState struct {
 
 	// for displaying suggestions while typing in a file name
 	FilesTrie *patricia.Trie
+
+	// this is the message of the last failed commit attempt
+	failedCommitMessage string
 }
 
 // reuseState determines if we pull the repo state from our repo state map or
@@ -625,11 +628,7 @@ func (gui *Gui) runSubprocess(subprocess *exec.Cmd) error {
 
 	fmt.Fprintf(os.Stdout, "\n%s\n\n", style.FgBlue.Sprint("+ "+strings.Join(subprocess.Args, " ")))
 
-	if err := subprocess.Run(); err != nil {
-		// not handling the error explicitly because usually we're going to see it
-		// in the output anyway
-		gui.Log.Error(err)
-	}
+	err := subprocess.Run()
 
 	subprocess.Stdout = ioutil.Discard
 	subprocess.Stderr = ioutil.Discard
@@ -638,7 +637,7 @@ func (gui *Gui) runSubprocess(subprocess *exec.Cmd) error {
 	fmt.Fprintf(os.Stdout, "\n%s", style.FgGreen.Sprint(gui.Tr.PressEnterToReturn))
 	fmt.Scanln() // wait for enter press
 
-	return nil
+	return err
 }
 
 func (gui *Gui) loadNewRepo() error {
